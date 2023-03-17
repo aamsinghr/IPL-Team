@@ -51,7 +51,12 @@ jobs:
     name: Analize test result
     runs-on: ubuntu-latest
     # Only run this workflow when "build" workflow succeeds
-    needs: [test]        
+    needs: [test]
+    permissions:
+      statuses: write
+      checks: write
+      contents: write
+      pull-requests: write
     
     steps:
       - name: Download TEST-TestSuite.xml
