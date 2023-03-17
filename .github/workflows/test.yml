@@ -24,8 +24,53 @@ jobs:
         java-version: '11'
         distribution: 'temurin'
         cache: maven
+        
     - name: Test Execution
       run: mvn clean test --file pom.xml
+      
+    - name: Execution result
+      id: ex_res
+      run: |
+        if test -f "target/surefire-reports/TestSuite.txt"; then
+            echo "TestSuite.txt exists."
+            echo "::set-output name=result_message::$(grep "Tests run:" target/surefire-reports/TestSuite.txt)"
+             
+        else 
+            echo "TestSuite.txt not found"
+        fi
+            
+    - name: Attach TestSuite
+      uses: actions/upload-artifact@v2
+      with:
+        name: TEST-TestSuite.xml
+        path: "target/surefire-reports/TEST-TestSuite.xml"
+
+  
+  analize:
+    if: always()
+    name: Analize test result
+    runs-on: ubuntu-latest
+    # Only run this workflow when "build" workflow succeeds
+    needs: [test]        
+    
+    steps:
+      - name: Download TEST-TestSuite.xml
+        uses: actions/download-artifact@v3
+        with:
+          name: TEST-TestSuite.xml
+      
+      #required for step Test Reporter - WA fatal: not a git repository (or any of the parent directories): .git
+      - name: Run git init
+        run: git init
+      
+      - name: Test Reporter
+        id: testreport
+        uses: dorny/test-reporter@v1.4.3
+        with:
+          name: Run Tests
+          path: "TEST-TestSuite.xml"
+          reporter: java-junit
+          fail-on-error: true
 
     # Optional: Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive
     #- name: Update dependency graph
